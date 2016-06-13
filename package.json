@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  	"build": "NODE_ENV=development babel -w code/ -d build/ --source-maps",
-  	"start": "babel-node code/index.js --source-maps"
+    "build": "NODE_ENV=development babel -w code/ -d build/ --source-maps",
+    "start": "babel-node code/index.js --source-maps"
   },
   "author": "Nikita Buevich",
   "license": "MIT",
   "dependencies": {
+    "moment": "^2.13.0",
     "node-telegram-bot-api": "^0.23.3",
     "request": "^2.72.0"
   },
