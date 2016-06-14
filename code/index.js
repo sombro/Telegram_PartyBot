@@ -85,14 +85,22 @@ function getGroups(date) {
 
 	return rp(url).then(htmlString => {
 		my_response = JSON.parse(htmlString);
-		my_response = my_response.response;
-
 		console.log(my_response)
-
-		if (my_response[0] > 0) {
-			return my_response[1].name;
+		if (my_response.error) {
+			if (my_response.error.error_code === 5) {
+				// get new access_token
+			}
+			console.log(my_response.error.error_msg);
+			return "Sorry! Party Bot is temporary unavailable. Try again later."
 		} else {
-			return "No parties that day :(";
+			my_response = my_response.response;
+
+			if (my_response[0] > 0) {
+				my_response = my_response[1].name + ' https://new.vk.com/' + my_response[1].screen_name;
+				return my_response;
+			} else {
+				return "No parties that day :(";
+			}
 		}
 	}).catch(err => {
 		console.log(err);
