@@ -8,7 +8,8 @@ export default function parse(msg, locale) {
 	};
 
 	var words = msg.replace(/\s\s+/g, ' ') // replace multitabs with tabs
-		.split(/,|\.|_|\t|\n|\r|\s/g); // array of splitted words
+		.toLowerCase()
+		.split(/,|\.|_|\t|\n|\r|\s/g); // split words
 
 	for (let i = 0; i < words.length; i++) {
 		let date = '';
