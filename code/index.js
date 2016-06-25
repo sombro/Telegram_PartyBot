@@ -1,6 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api';
 import rp from 'request-promise';
-import moment from 'moment';
 import { TELEGRAM, VK } from '../configs/token';
 import { MESSAGES, COMMANDS } from '../configs/constants';
 import parse from './parser';
