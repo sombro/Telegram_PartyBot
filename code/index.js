@@ -2,75 +2,49 @@ import TelegramBot from 'node-telegram-bot-api';
 import rp from 'request-promise';
 import moment from 'moment';
 import { TELEGRAM, VK } from '../configs/token';
+import { MESSAGES, COMMANDS } from '../configs/constants';
+import parse from './parser';
 
-const botOptions = {
+const LOCALE = 'ru';
+const BOT_OPTIONS = {
 	polling: true
 };
-var bot = new TelegramBot(TELEGRAM.token, botOptions);
+
+var bot = new TelegramBot(TELEGRAM.token, BOT_OPTIONS);
 
 bot.getMe().then(me => {
 	console.log('Hello! My name is %s!', me.first_name);
 	console.log('My id is %s.', me.id);
 	console.log('And my username is @%s.', me.username);
+	console.log('');
 });
 
 bot.on('text', msg => {
-	let messageChatId = msg.chat.id;
-	let messageText = msg.text;
-	let messageDate = msg.date;
-	let messageUsr = msg.from.username;
+	console.log(msg)
 
-	const command = '/party ';
+	var messageChatId = msg.chat.id;
+	var messageText = msg.text;
+	var messageUsr = msg.from.username;
 
-	console.log(msg);
-	if (messageText.includes(command)) {
-		checkDate(messageText, messageDate, command).then(date => {
-			return getGroups(date);
-		}).then(response => {
+	var data = parse(messageText, LOCALE);
+
+	if (data.help) {
+		sendMessageByBot(messageChatId, MESSAGES[LOCALE].help);
+	} else if (data.dates.length > 0) {
+		getGroupsFromVK(data.dates[0], VK).then(response => {
 			sendMessageByBot(messageChatId, response);
 		});
-	} else if (messageText === '/help' || messageText === '/party') {
-		sendMessageByBot(messageChatId, "Send '/party today' to find today parties. Send '/party <18 июня>' to find party in a certain day.");
 	} else {
-		sendMessageByBot(messageChatId, "Hi, " + messageUsr + "! Send /help to see what I can!");
+		sendMessageByBot(messageChatId, MESSAGES[LOCALE].hi + ", " + messageUsr + "! " + MESSAGES[LOCALE].send + COMMANDS.help + MESSAGES[LOCALE].whatICan);
 	}
 });
 
-function checkDate(messageText, messageDate, command) {
-	let date = getDateFromTimestamp(messageDate);
-
-	if (messageText === command + 'today') {
-		date = normalizeDate(date);
-	} else if (messageText.includes(command)) {
-		date = encodeURI(messageText.replace(command, ''));
-	}
-
-	return Promise.resolve(date);
-};
-
-function getDateFromTimestamp(timestamp) {
-	return moment(timestamp*1000);
-};
-
-function normalizeDate(date) {
-	const options = {
-		locale: 'ru',
-		format: 'D MMMM',
-	};
-
-	moment.locale(options.locale);
-	date = date.format(options.format);
-	date = encodeURI(date);
-
-	return date;
-};
-
 function sendMessageByBot(aChatId, aMessage) {
-	bot.sendMessage(aChatId, aMessage, { caption: 'I\'m a cute bot!' });
+	bot.sendMessage(aChatId, aMessage);
 };
 
-function getGroups(date) {
-	let r = {
+function getGroupsFromVK(date, VK) {
+	var r = {
 		'method': 'groups.search',
 		'date': date,
 		'type': 'event',
@@ -79,27 +53,30 @@ function getGroups(date) {
 		'future': 1,
 		'access_token': VK.access_token
 	};
-	let string = r.date;
-	let url = 'https://api.vk.com/method/' + r.method + '?q=' + string + '&future=' + r.future + '&country_id=' + r.country_id + '&city_id=' + r.city_id + '&type=' + r.type + '&access_token=' + r.access_token;
-	let my_response = "Let's party!";
+	var string = r.date;
+	var url = 'https://api.vk.com/method/' + r.method +
+		'?q=' + string +
+		'&future=' + r.future +
+		'&country_id=' + r.country_id +
+		'&city_id=' + r.city_id +
+		'&type=' + r.type +
+		'&access_token=' + r.access_token;
 
 	return rp(url).then(htmlString => {
-		my_response = JSON.parse(htmlString);
-		console.log(my_response)
+		var my_response = JSON.parse(htmlString);
+		console.log(my_response);
+
 		if (my_response.error) {
-			if (my_response.error.error_code === 5) {
-				// get new access_token
-			}
 			console.log(my_response.error.error_msg);
-			return "Sorry! Party Bot is temporary unavailable. Try again later."
+			return MESSAGES[LOCALE].unavailable;
 		} else {
 			my_response = my_response.response;
 
 			if (my_response[0] > 0) {
-				my_response = my_response[1].name + ' https://new.vk.com/' + my_response[1].screen_name;
+				my_response = my_response[1].name + ' https://new.vk.com/club' + my_response[1].gid;
 				return my_response;
 			} else {
-				return "No parties that day :(";
+				return MESSAGES[LOCALE].noParties;
 			}
 		}
 	}).catch(err => {

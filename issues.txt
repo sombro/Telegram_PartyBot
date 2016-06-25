@@ -6,3 +6,4 @@
 6. Подтягивать события из facebook
 7. API KudaGo https://vc.ru/n/kudago-api
 8. API Афиша ру https://toster.ru/q/27729
+9. Подключить Botan Analytics
